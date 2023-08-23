@@ -1,6 +1,6 @@
 # k8s-cluster
 
-Deployment instructions for creating a Kubernetes cluster using Rocky Linux 8. See other branches for other OSes.
+Deployment instructions for creating a Kubernetes cluster using Rocky Linux 8.
 
 ## Architecture
 

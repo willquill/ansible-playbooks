@@ -4,7 +4,11 @@ This project contains a collection of [Ansible playbooks](https://docs.ansible.c
 
 ## Playbooks
 
-### kube-lxc
+### k8s-cluster
+
+Creating a Kubernetes cluster using Rocky Linux 8.
+
+### k8s-proxmox
 
 Creating a kubernetes cluster where one or more nodes are LXC containers in Proxmox
 
