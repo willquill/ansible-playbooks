@@ -1,0 +1,10 @@
+[k8snodes]
+k01 ansible_connection=ssh ansible_user=nova
+#k02 ansible_connection=ssh ansible_user=nova
+#k03 ansible_connection=ssh ansible_user=nova
+
+[k8sworkers]
+k01 ansible_connection=ssh ansible_user=nova
+
+[dockernodes]
+tucana ansible_connection=ssh ansible_user=nova
