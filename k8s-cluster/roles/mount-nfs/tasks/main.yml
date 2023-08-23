@@ -1,0 +1,21 @@
+---
+- name: Create Media Directory
+  file:
+    path: "{{ mount_path }}"
+    state: directory
+    owner: "{{ mount_owner }}"        # If not specified, owner permission will be root
+    group: "{{ mount_group }}"        # If not specified, group permission will be root
+    mode: "{{ mount_mode}}"         # If not specified, the mode will be 544 (u=rw,g=r,o=r or  -rw-r--r--)
+
+- name: Install nfs-utils
+  dnf:
+    name: [nfs-utils]
+    state: present
+
+- name: Mount NFS
+  ansible.posix.mount:
+    src: "{{ mount_src }}"
+    path: "{{ mount_path }}"
+    opts: "{{ mount_opts }}"
+    state: mounted
+    fstype: nfs

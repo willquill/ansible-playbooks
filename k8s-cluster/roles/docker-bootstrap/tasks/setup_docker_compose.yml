@@ -1,0 +1,8 @@
+---
+- name: Download and install Docker Compose
+  ansible.builtin.command:
+    cmd: sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+- name: Make Docker Compose executable
+  ansible.builtin.command:
+    cmd: sudo chmod +x /usr/local/bin/docker-compose

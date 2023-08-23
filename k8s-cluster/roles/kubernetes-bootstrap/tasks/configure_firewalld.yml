@@ -1,0 +1,78 @@
+---
+- name: Install firewalld
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+
+- name: Start and enable firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Configure firewalld on master nodes
+  ansible.posix.firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+  with_items: '{{ k8s_master_ports }}'
+  when: "'master' in ansible_hostname"
+
+- name: Configure firewalld on worker nodes
+  ansible.posix.firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+  with_items: '{{ k8s_worker_ports }}'
+  when: ("'node' in ansible_hostname" or "'worker' in ansible_hostname")
+
+- name: Configure firewalld on AIO nodes
+  ansible.posix.firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+  with_items: '{{ k8s_aio_ports }}'
+  when: ("'k01' in ansible_hostname")
+
+- name: Open flannel ports on the firewall
+  ansible.posix.firewalld:
+    port: "{{ item }}/udp"
+    permanent: yes
+    state: enabled
+  with_items: "{{ flannel_udp_ports }}"
+  when: k8s_cni == "flannel"
+
+- name: Open calico UDP ports on the firewall
+  ansible.posix.firewalld:
+    port: "{{ item }}/udp"
+    permanent: yes
+    state: enabled
+  with_items: "{{ calico_udp_ports }}"
+  when: k8s_cni == "calico"
+
+- name: Open calico TCP ports on the firewall
+  ansible.posix.firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+  with_items: "{{ calico_tcp_ports }}"
+  when: k8s_cni == "calico"
+
+- name: Open weave UDP ports on the firewall
+  ansible.posix.firewalld:
+    port: "{{ item }}/udp"
+    permanent: yes
+    state: enabled
+  with_items: "{{ weave_udp_ports }}"
+  when: k8s_cni == "weave"
+
+- name: Open weave TCP ports on the firewall
+  ansible.posix.firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+  with_items: "{{ weave_tcp_ports }}"
+  when: k8s_cni == "weave"
+
+- name: Reload firewalld
+  shell: firewall-cmd --reload
