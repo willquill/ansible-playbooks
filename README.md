@@ -6,7 +6,7 @@ This project contains a collection of [Ansible playbooks](https://docs.ansible.c
 
 ### k8s-cluster
 
-creating a Kubernetes cluster using Rocky Linux 8.
+Creating a Kubernetes cluster using Rocky Linux 8.
 
 ### k8s-proxmox
 
