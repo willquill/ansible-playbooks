@@ -1,0 +1,25 @@
+---
+- name: Update and upgrade Debian-based systems
+  hosts: all
+  become: yes
+  tasks:
+    - name: Check if the system is Debian-based
+      ansible.builtin.shell: cat /etc/os-release | grep -E '^ID_LIKE=|^ID='
+      register: os_release_info
+      changed_when: false
+
+    - name: Ensure the system is Debian-based
+      ansible.builtin.debug:
+        msg: "This host is not a Debian-based system and will be skipped."
+      when: os_release_info.stdout is not regex_search("debian")
+      ignore_errors: yes
+
+    - name: Update the package list
+      ansible.builtin.apt:
+        update_cache: yes
+      when: os_release_info.stdout is regex_search("debian")
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+      when: os_release_info.stdout is regex_search("debian")
