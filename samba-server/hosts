@@ -1,0 +1,2 @@
+[samba]
+hoth ansible_connection=ssh ansible_user=will

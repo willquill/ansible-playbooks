@@ -1,0 +1,25 @@
+---
+# all non secret vars
+usergroups:
+  - family
+  - admins
+
+users:
+  - { name: "will", groups: "will", smbpasswd: "mainuser" }
+  #- { name: "mainuser", groups: "family, admins", smbpasswd: "mainuser" }
+  #- { name: "otheruser", groups: "family", smbpasswd: "otheruser" }
+  #- { name: "thirduser", groups: "family", smbpasswd: "thirduser" }
+  #- { name: "userNotInGroups", groups: "", smbpasswd: "userNotInGroups" }
+
+adminuser: mainuser # should be an existing one from above
+
+shared_folders:
+  - { name: "data", path: "/{{zfs.poolName}}/data" }
+  #- { name: "Images", path: "/{{zfs.poolName}}/media/images" }
+  #- { name: "Music", path: "/{{zfs.poolName}}/media/music" }
+  #- { name: "Shared folder", path: "/{{zfs.poolName}}/personal/all" }
+  #- { name: "Shared Backup Folder", path: "/{{zfs.poolName}}/backup/all" }
+
+shared_folders_group: family
+
+domain_name: example.com
