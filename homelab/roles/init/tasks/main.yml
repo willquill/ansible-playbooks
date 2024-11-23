@@ -1,0 +1,90 @@
+---
+- name: Ensure SSH key is copied to the root user
+  ansible.builtin.authorized_key:
+    user: root
+    state: present
+    key: "{{ lookup('file', '~/.ssh/{{ local_key }}.pub') }}"  # Path to your SSH public key
+  when: ansible_facts['virtualization_type'] != 'lxc' # only when not LXC  
+
+- name: Update and upgrade the system
+  include_tasks: ../../tasks/update_system.yml
+  when: hostvars[inventory_hostname].upgrade
+
+- name: Ensure extra packages are installed and upgraded
+  ansible.builtin.package:
+    name: "{{ packages }}"
+    state: present
+
+- name: Create non-root user
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    state: present
+    shell: /usr/bin/zsh
+    groups: sudo
+    append: true
+  when: hostvars[inventory_hostname].user_create
+
+- name: Ensure public SSH key is copied to the non-root user
+  ansible.builtin.authorized_key:
+    user: "{{ user_name }}"
+    state: present
+    key: "{{ lookup('file', '~/.ssh/{{ local_key }}.pub') }}"
+  when: hostvars[inventory_hostname].user_create
+
+- name: Set combined fact for Docker group and user creation for GitHub clone
+  ansible.builtin.set_fact:
+    docker_github_true: "{{ 'docker' in group_names and hostvars[inventory_hostname].user_create}}"
+
+- name: Check if Docker is installed
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_installed
+  ignore_errors: true  # Ignore errors if docker is not installed
+
+- name: Install Docker if host in docker group
+  include_tasks: ../../tasks/install_docker.yml
+  when: ("'docker' in group_names") and docker_installed.failed
+
+- name: Add user to docker group
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    groups: docker
+    append: true
+  when: docker_github_true
+
+- name: Check if the GitHub SSH key already exists (it shouldn't on first run)
+  ansible.builtin.stat:
+    path: "/home/{{ user_name }}/.ssh/{{ github_key }}"
+  register: github_key_exists
+  when: docker_github_true
+
+- name: Copy private SSH key for GitHub to the remote host
+  ansible.builtin.copy:
+    src: "{{ lookup('env', 'HOME') }}/.ssh/{{ github_key }}"
+    dest: "/home/{{ user_name }}/.ssh/{{ github_key }}"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0600'
+  when: docker_github_true and not github_key_exists.stat.exists
+
+# FIXME: Replace with https://www.chezmoi.io/
+- name: Set Git to use specific SSH key for GitHub
+  become: true
+  become_user: "{{ user_name }}"
+  ansible.builtin.shell: |
+    git config --global core.sshCommand "ssh -i /home/{{ user_name }}/.ssh/{{ github_key }} -o IdentitiesOnly=yes"
+    git config --global user.name "{{ github_user }}"
+    git config --global user.email "{{ github_email }}"
+  when: docker_github_true
+
+- name: Clone the Homelab repository using SSH
+  become: true
+  become_user: "{{ user_name }}"
+  ansible.builtin.git:
+    repo: 'git@github.com:{{ github_user }}/{{ github_repo }}.git'
+    dest: '/home/{{ user_name }}/{{ github_repo }}'
+    clone: yes
+    update: yes
+  environment:
+   GIT_SSH_COMMAND: "ssh -i /home/{{ user_name }}/.ssh/{{ github_key }} -o StrictHostKeyChecking=no"
+  when: docker_github_true

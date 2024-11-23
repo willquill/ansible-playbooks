@@ -1,0 +1,8 @@
+packages:
+  - curl
+  - vim
+  - git
+  - sudo
+  - tree
+  - wget
+  - zsh

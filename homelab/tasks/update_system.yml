@@ -1,0 +1,38 @@
+- name: Ensure package manager cache is up-to-date (Debian-based)
+  ansible.builtin.apt:
+    update_cache: yes
+  when: 
+    - hostvars[inventory_hostname]['upgrade'] | default(false)
+    - ansible_facts['os_family'] == 'Debian'
+
+- name: Ensure package manager cache is up-to-date (Red Hat-based)
+  ansible.builtin.yum:
+    update_cache: yes
+  when: 
+    - hostvars[inventory_hostname]['upgrade'] | default(false)
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Upgrade all packages (Debian-based)
+  ansible.builtin.apt:
+    upgrade: dist
+  when: 
+    - hostvars[inventory_hostname]['upgrade'] | default(false)
+    - ansible_facts['os_family'] == 'Debian'
+
+- name: Upgrade all packages (Red Hat-based)
+  ansible.builtin.yum:
+    name: "*"
+    state: latest
+  when: 
+    - hostvars[inventory_hostname]['upgrade'] | default(false)
+    - ansible_facts['os_family'] == 'RedHat'
+
+# - name: Perform a reboot if required (Debian-based)
+#   ansible.builtin.reboot:
+#     msg: "System is rebooting after package upgrades."
+#   when: ansible_facts['os_family'] == 'Debian' and ansible_facts['ansible_kernel'] is not regex_search('^4')
+
+# - name: Perform a reboot if required (Red Hat-based)
+#   ansible.builtin.reboot:
+#     msg: "System is rebooting after package upgrades."
+#   when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['ansible_kernel'] is not regex_search('^4')
