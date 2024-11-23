@@ -1,0 +1,4 @@
+---
+- name: Update and upgrade the system
+  include_tasks: ../../tasks/update_system.yml
+  when: hostvars[inventory_hostname].upgrade

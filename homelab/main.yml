@@ -1,0 +1,28 @@
+- name: Homelab
+  hosts: all
+
+- name: Create fact-based groups
+  hosts: all
+  tasks:
+    - name: Classify hosts by their virtualization type
+      group_by:
+        key: "{{ ansible_facts['virtualization_type'] }}"
+      changed_when: false # forces ok status
+    - name: Debug virtualization type
+      debug:
+        msg: "Virtualization type is {{ ansible_facts['virtualization_type'] }}"  
+    - name: Classify hosts by their OS family
+      group_by:
+        key: "{{ ansible_facts['os_family'] }}"
+      changed_when: false # forces ok status
+
+- name: Initialize System and Create User
+  hosts: all
+  roles:
+    - init
+
+- name: Update System and Install Packages
+  hosts: all
+  roles:
+    - role: update
+      tags: update
