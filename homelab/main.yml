@@ -1,8 +1,11 @@
 - name: Homelab
   hosts: all
+  tags: always
 
 - name: Create fact-based groups
   hosts: all
+  # This ensures that the groups are created before any role is executed
+  tags: always
   tasks:
     - name: Classify hosts by their virtualization type
       group_by:
@@ -18,11 +21,74 @@
 
 - name: Initialize System and Create User
   hosts: all
-  roles:
-    - init
+  tags: init
+  tasks:
+    - name: Print user_create variable from hostvars
+      ansible.builtin.debug:
+        msg: "The value of user_create is: {{ hostvars[inventory_hostname].user_create }}"    
+    - name: Perform Init Role
+      include_role:
+        name: init
 
-- name: Update System and Install Packages
+- name: Update System
+  tags: update
   hosts: all
   roles:
     - role: update
-      tags: update
+
+- name: Setup ZSH shell
+  hosts: all
+  tags: zsh
+  tasks:
+    # Must create blocks since become is not a valid
+    # attribute for IncludeRole
+    - block:
+        - name: Include ZSH role for root
+          include_role:
+            name: zsh
+          vars:
+            homedir: "/root"
+            zsh_user: "root"
+    - block:
+        - name: Include ZSH role for non-root user
+          include_role:
+            name: zsh
+          vars:
+            homedir: "/home/{{ user_name }}"
+            zsh_user: "{{ user_name }}"
+      when: user_create
+      become: true
+      become_user: "{{ user_name }}"
+      
+- name: Configure GitHub repository under either root or non-root user
+  hosts: all
+  tags: github_clone  
+  tasks:
+    - block:
+        - name: Clone GitHub repository
+          include_role:
+            name: github_clone
+          vars:
+            homedir: "{{ (user_create | default(false)) | ternary('/home/' + user_name, '/root') }}"
+            git_user: "{{ (user_create | default(false)) | ternary(user_name, 'root') }}" 
+      when: github_clone
+      become: true
+      become_user: "{{ (user_create | default(false)) | ternary(user_name, 'root') }}"
+
+- name: Install Docker
+  hosts: docker
+  tags: docker  
+  tasks:
+    - block:
+        - name: Install docker
+          include_role:
+            name: docker
+        - name: Add non-root user to docker group
+          ansible.builtin.user:
+            name: "{{ user_name }}"
+            groups: docker
+            append: true
+          when: hostvars[inventory_hostname].user_create  
+      when: ("'docker' in group_names") 
+      #become: true
+      #become_user: "{{ user_name }}"

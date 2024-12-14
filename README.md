@@ -45,6 +45,12 @@ Provision all hosts with:
 ansible-playbook -i hosts.yml main.yml
 ```
 
+Update all hosts:
+
+```sh
+ansible-playbook -i hosts.yml main.yml --tags update
+```
+
 ### k8s-cluster
 
 Creating a Kubernetes cluster using Rocky Linux 8.

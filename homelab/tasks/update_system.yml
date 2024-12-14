@@ -27,6 +27,18 @@
     - hostvars[inventory_hostname]['upgrade'] | default(false)
     - ansible_facts['os_family'] == 'RedHat'
 
+- name: Check if chezmoi binary exists
+  ansible.builtin.stat:
+    path: "/usr/local/bin/chezmoi"
+  register: chezmoi_binary_stat
+
+- name: Update chezmoi if it exists
+  ansible.builtin.command:
+    cmd: "chezmoi update"
+  when: 
+    - chezmoi_binary_stat.stat.exists
+  changed_when: chezmoi_result.stdout != "Already up to date."  
+
 # - name: Perform a reboot if required (Debian-based)
 #   ansible.builtin.reboot:
 #     msg: "System is rebooting after package upgrades."

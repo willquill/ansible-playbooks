@@ -1,0 +1,12 @@
+# - name: Debug
+#   include_tasks: ../../tasks/debug.yml
+
+- name: Check if Docker is installed
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_installed
+  ignore_errors: true  # Ignore errors if docker is not installed
+
+- name: Install Docker
+  include_tasks: ../../tasks/install_docker.yml
+  when: docker_installed.failed
