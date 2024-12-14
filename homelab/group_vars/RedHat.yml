@@ -6,3 +6,4 @@ packages:
   - tree
   - wget
   - zsh
+  - fzf

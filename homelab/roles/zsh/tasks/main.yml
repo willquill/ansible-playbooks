@@ -1,0 +1,58 @@
+# Check shell before changing shell
+# - name: Debug
+#   include_tasks: ../../tasks/debug.yml
+
+- name: Set ZSH shell for user
+  ansible.builtin.user:
+    name: "{{ zsh_user }}"
+    shell: /usr/bin/zsh
+
+# Check shell after changing shell
+# - name: Debug
+#   include_tasks: ../../tasks/debug.yml
+
+- name: Ensure $HOME/.zsh directory exists
+  ansible.builtin.file:
+    path: "{{ homedir }}/.zsh"
+    state: directory
+    mode: '0755'
+
+- name: Test if Spaceship prompt repository is cloned
+  ansible.builtin.stat:
+    path: "{{ homedir }}/.zsh/spaceship"
+  register: spaceship_dir_stat
+
+- name: Clone Spaceship prompt repository
+  ansible.builtin.git:
+    repo: https://github.com/spaceship-prompt/spaceship-prompt.git
+    dest: "{{ homedir }}/.zsh/spaceship"
+    depth: 1
+    update: no
+  when: spaceship_dir_stat.stat.exists == False
+
+- name: Test if chezmoi binary is installed
+  ansible.builtin.stat:
+    path: "/usr/local/bin/chezmoi"
+  register: chezmoi_installed_stat
+
+- name: Debug whether chezmoi binary is installed
+  ansible.builtin.debug:
+    var: chezmoi_installed_stat.stat.exists
+
+- name: Download chezmoi installer script
+  ansible.builtin.get_url:
+    url: "https://get.chezmoi.io"
+    dest: "/tmp/chezmoi-install.sh"
+    mode: "0755"
+  when: chezmoi_installed_stat.stat.exists == False
+
+- name: Run chezmoi installer
+  ansible.builtin.command:
+    cmd: "sh /tmp/chezmoi-install.sh -b /usr/local/bin"
+    creates: "/usr/local/bin/chezmoi"
+  when: chezmoi_installed_stat.stat.exists == False  
+
+- name: Init and install chezmoi for user
+  ansible.builtin.command:
+    cmd: "chezmoi init --apply {{ github_user }}"
+    creates: "{{ homedir }}/.local/share/chezmoi"

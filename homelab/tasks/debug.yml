@@ -1,0 +1,29 @@
+- name: Print HOME environment variable
+  ansible.builtin.debug:
+    msg: "The HOME environment variable is: {{ ansible_env.HOME }}"
+
+- name: Print USER environment variable
+  ansible.builtin.debug:
+    msg: "The value of ansible_env.USER fact is : {{ ansible_env.USER }}"
+
+- name: Register user's shell
+  ansible.builtin.command:
+    cmd: "grep '^{{ ansible_env.USER  }}:' /etc/passwd"
+  register: shell
+
+- name: Print user's shell
+  ansible.builtin.debug:
+    msg: "User's shell: {{ shell.stdout }}"
+
+# - name: Print become user
+#   ansible.builtin.debug:
+#     msg: "The become user is: {{ ansible_facts['ansible_become_user'] }}"
+
+# - name: Register become user's shell
+#   ansible.builtin.command:
+#     cmd: "grep '^{{ ansible_facts['ansible_become_user']  }}:' /etc/passwd"
+#   register: shell_become
+
+# - name: Print become user's shell
+#   ansible.builtin.debug:
+#     msg: "Become user's shell: {{ shell_become.stdout }}"
