@@ -1,58 +1,76 @@
-# Check shell before changing shell
-# - name: Debug
-#   include_tasks: ../../tasks/debug.yml
+---
+- name: Set value of homedir
+  ansible.builtin.set_fact:
+    homedir: "{{ '/root' if zsh_user == 'root' else '/home/' + zsh_user }}"
 
-- name: Set ZSH shell for user
+- name: Set ZSH shell for user {{ zsh_user }}
   ansible.builtin.user:
     name: "{{ zsh_user }}"
     shell: /usr/bin/zsh
+  become: true
+  become_user: root
 
 # Check shell after changing shell
-# - name: Debug
-#   include_tasks: ../../tasks/debug.yml
+- name: Debug
+  ansible.builtin.include_tasks: ../../tasks/debug.yml
 
 - name: Ensure $HOME/.zsh directory exists
   ansible.builtin.file:
     path: "{{ homedir }}/.zsh"
     state: directory
-    mode: '0755'
-
-- name: Test if Spaceship prompt repository is cloned
-  ansible.builtin.stat:
-    path: "{{ homedir }}/.zsh/spaceship"
-  register: spaceship_dir_stat
+    mode: "0755"
 
 - name: Clone Spaceship prompt repository
   ansible.builtin.git:
     repo: https://github.com/spaceship-prompt/spaceship-prompt.git
     dest: "{{ homedir }}/.zsh/spaceship"
-    depth: 1
-    update: no
-  when: spaceship_dir_stat.stat.exists == False
+    version: master
+    update: false
 
-- name: Test if chezmoi binary is installed
-  ansible.builtin.stat:
-    path: "/usr/local/bin/chezmoi"
-  register: chezmoi_installed_stat
+# Next tasks borrowed from hussainweb/ansible-role-chezmoi
+- name: Find the latest chezmoi version
+  when: zsh_chezmoi_version == ""
+  block:
+    - name: Find latest releases
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/twpayne/chezmoi/releases/latest
+        return_content: true
+      register: chezmoi_release_output
+    - name: Set version
+      ansible.builtin.set_fact:
+        _chezmoi_version: "{{ chezmoi_release_output.json.tag_name }}"
 
-- name: Debug whether chezmoi binary is installed
-  ansible.builtin.debug:
-    var: chezmoi_installed_stat.stat.exists
+- name: Set the chezmoi version
+  when: chezmoi_version != ""
+  ansible.builtin.set_fact:
+    _chezmoi_version: "{{ zsh_chezmoi_version }}"
 
-- name: Download chezmoi installer script
-  ansible.builtin.get_url:
-    url: "https://get.chezmoi.io"
-    dest: "/tmp/chezmoi-install.sh"
-    mode: "0755"
-  when: chezmoi_installed_stat.stat.exists == False
+- name: Check if chezmoi is already installed
+  ansible.builtin.command: chezmoi --version
+  register: chezmoi_version_output
+  ignore_errors: true
+  changed_when: false
 
-- name: Run chezmoi installer
-  ansible.builtin.command:
-    cmd: "sh /tmp/chezmoi-install.sh -b /usr/local/bin"
-    creates: "/usr/local/bin/chezmoi"
-  when: chezmoi_installed_stat.stat.exists == False  
+- name: Determine chezmoi version and other variables
+  ansible.builtin.set_fact:
+    chezmoi_install: "{{ chezmoi_version_output.rc == 2 or not (_chezmoi_version in chezmoi_version_output.stdout) }}"
+    chezmoi_version_filtered: "{{ _chezmoi_version | regex_replace('^v', '') }}"
 
-- name: Init and install chezmoi for user
+- name: "Install (deb) chezmoi v{{ chezmoi_version_filtered }}"
+  ansible.builtin.apt:
+    deb: https://github.com/twpayne/chezmoi/releases/download/v{{ chezmoi_version_filtered }}/chezmoi_{{ chezmoi_version_filtered }}_linux_{{ zsh_chezmoi_debian_architectures[ansible_architecture] }}.deb
+  when: chezmoi_install and ansible_facts['os_family'] == 'Debian'
+  become: true
+
+- name: "Install (rpm) chezmoi v{{ chezmoi_version_filtered }}"
+  ansible.builtin.dnf:
+    name: https://github.com/twpayne/chezmoi/releases/download/v{{ chezmoi_version_filtered }}/chezmoi-{{ chezmoi_version_filtered }}-{{ zsh_chezmoi_redhat_architectures[ansible_architecture] }}.rpm
+    state: present
+    disable_gpg_check: true # GPG check fails for some reason.
+  when: chezmoi_install and ansible_facts['os_family'] == 'RedHat'
+  become: true
+
+- name: "Init chezmoi for {{ zsh_user }}"
   ansible.builtin.command:
     cmd: "chezmoi init --apply {{ github_user }}"
     creates: "{{ homedir }}/.local/share/chezmoi"

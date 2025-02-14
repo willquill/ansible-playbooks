@@ -1,21 +1,23 @@
 - name: Ensure package manager cache is up-to-date (Debian-based)
   ansible.builtin.apt:
     update_cache: yes
-  when: 
+  when:
     - hostvars[inventory_hostname]['upgrade'] | default(false)
     - ansible_facts['os_family'] == 'Debian'
 
 - name: Ensure package manager cache is up-to-date (Red Hat-based)
   ansible.builtin.yum:
     update_cache: yes
-  when: 
+  when:
     - hostvars[inventory_hostname]['upgrade'] | default(false)
     - ansible_facts['os_family'] == 'RedHat'
 
 - name: Upgrade all packages (Debian-based)
   ansible.builtin.apt:
     upgrade: dist
-  when: 
+    autoremove: yes
+    autoclean: yes
+  when:
     - hostvars[inventory_hostname]['upgrade'] | default(false)
     - ansible_facts['os_family'] == 'Debian'
 
@@ -23,22 +25,9 @@
   ansible.builtin.yum:
     name: "*"
     state: latest
-  when: 
+  when:
     - hostvars[inventory_hostname]['upgrade'] | default(false)
     - ansible_facts['os_family'] == 'RedHat'
-
-- name: Check if chezmoi binary exists
-  ansible.builtin.stat:
-    path: "/usr/local/bin/chezmoi"
-  register: chezmoi_binary_stat
-
-- name: Update chezmoi if it exists
-  ansible.builtin.command:
-    cmd: "chezmoi update"
-  when: 
-    - chezmoi_binary_stat.stat.exists
-  changed_when: chezmoi_result.stdout != "Already up to date."  
-
 # - name: Perform a reboot if required (Debian-based)
 #   ansible.builtin.reboot:
 #     msg: "System is rebooting after package upgrades."

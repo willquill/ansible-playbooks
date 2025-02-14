@@ -1,13 +1,20 @@
+- name: Check if Docker is installed
+  ansible.builtin.command: docker --version
+  register: docker_installed
+  ignore_errors: true
+  changed_when: false
+
 - name: Download Docker installation script
   ansible.builtin.get_url:
     url: https://get.docker.com
     dest: /tmp/get-docker.sh
     mode: '0755'
+  when: docker_installed.failed
 
 - name: Run Docker installation script
-  ansible.builtin.shell:
-    cmd: "sh /tmp/get-docker.sh"
+  ansible.builtin.shell: /tmp/get-docker.sh
   register: docker_install_output
+  when: docker_installed.failed
 
 - name: Show Docker installation script output
   ansible.builtin.debug:

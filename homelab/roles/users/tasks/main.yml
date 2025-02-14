@@ -1,0 +1,15 @@
+---
+- name: Create non-root user
+  ansible.builtin.user:
+    name: "{{ users_user }}"
+    password: "{{ lookup('ansible.builtin.env', 'USER_PASSWORD') | password_hash('sha512') }}"
+    update_password: always # allows you to change the password
+    state: present
+    groups: sudo
+    append: true
+
+- name: Ensure public SSH key is copied to the non-root user
+  ansible.posix.authorized_key:
+    user: "{{ users_user }}"
+    state: present
+    key: "{{ lookup('file', '{{ ssh_mgmt_key }}.pub') }}"
