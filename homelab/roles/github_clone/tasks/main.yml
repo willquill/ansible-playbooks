@@ -11,31 +11,21 @@
     dest: "{{ homedir }}/.ssh/{{ ssh_github_key }}"
     owner: "{{ git_user }}"
     group: "{{ git_user }}"
-    mode: '0600'
-  when: ssh_github_key_exists.stat.exists == False
-
-# FIXME: Replace with https://www.chezmoi.io/
-# - name: Set Git to use specific SSH key for GitHub
-#   become: true
-#   become_user: "{{ git_user }}"
-#   ansible.builtin.shell: |
-#     git config --global core.sshCommand "ssh -i /home/{{ git_user }}/.ssh/{{ ssh_github_key }} -o IdentitiesOnly=yes"
-#     git config --global user.name "{{ github_user }}"
-#     git config --global user.email "{{ github_email }}"
-#   when: docker_github_true
+    mode: "0600"
+  when: not ssh_github_key_exists.stat.exists
 
 - name: Ensure SSH config directory exists
   ansible.builtin.file:
     path: "{{ homedir }}/.ssh"
     state: directory
-    mode: '0700'
+    mode: "0700"
 
 - name: Add SSH config entry for GitHub
   ansible.builtin.blockinfile:
     path: "{{ homedir }}/.ssh/config"
     state: present
-    create: yes
-    mode: '0600'
+    create: true
+    mode: "0600"
     marker: "# {mark} ANSIBLE MANAGED BLOCK FOR GITHUB"
     block: |
       Host github.com
@@ -53,7 +43,7 @@
 
 - name: Clone the Homelab repository using SSH
   ansible.builtin.git:
-    repo: 'git@github.com:{{ github_user }}/{{ github_repo }}.git'
-    dest: '{{ homedir }}/{{ github_repo }}'
-    clone: yes
-    update: yes
+    repo: "git@github.com:{{ github_user }}/{{ github_repo }}.git"
+    dest: "{{ homedir }}/{{ github_repo }}"
+    update: false
+  creates: "{{ homedir }}/{{ github_repo }}/.git"

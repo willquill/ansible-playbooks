@@ -6,14 +6,9 @@
   ansible.builtin.debug:
     msg: "The value of ansible_env.USER fact is : {{ ansible_env.USER }}"
 
-- name: Register user's shell
-  ansible.builtin.command:
-    cmd: "grep '^{{ ansible_env.USER  }}:' /etc/passwd"
-  register: shell
-
-- name: Print user's shell
+- name: Print the user's default shell
   ansible.builtin.debug:
-    msg: "User's shell: {{ shell.stdout }}"
+    msg: "The default shell for the user is: {{ ansible_user_shell }}"
 
 # - name: Print become user
 #   ansible.builtin.debug:

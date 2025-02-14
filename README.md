@@ -11,6 +11,9 @@ Provisioning and management of homelab resources
 Pre-requisites:
 
 - SSH keypair for your local client to server interactions
+- `ansible-galaxy collection install ansible.posix`
+- `export USER_PASSWORD='your_secure_password'` for user creation
+- `pip install passlib` to allow password hashing in users role
 
 ```sh
 ssh-keygen -t ecdsa -b 521 -f ~/.ssh/id_ecdsa -C "your_email@example.com"
@@ -50,6 +53,15 @@ Update all hosts:
 ```sh
 ansible-playbook -i hosts.yml main.yml --tags update
 ```
+
+#### Operation
+
+- Update system
+- Install packages
+- Setup users (create + keys)
+- Setup shell (spaceship + chezmoi)
+- Install docker (when)
+- Setup github_clone (when)
 
 ### k8s-cluster
 

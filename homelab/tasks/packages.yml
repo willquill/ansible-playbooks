@@ -1,0 +1,4 @@
+- name: Ensure packages are installed
+  ansible.builtin.package:
+    name: "{{ packages }}"
+    state: present
