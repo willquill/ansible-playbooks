@@ -7,6 +7,8 @@
   ansible.builtin.user:
     name: "{{ zsh_user }}"
     shell: /usr/bin/zsh
+  become: true
+  become_user: root
 
 # Check shell after changing shell
 - name: Debug
@@ -22,11 +24,12 @@
   ansible.builtin.git:
     repo: https://github.com/spaceship-prompt/spaceship-prompt.git
     dest: "{{ homedir }}/.zsh/spaceship"
-  creates: "{{ homedir }}/.zsh/spaceship/.git"
+    version: master
+    update: false
 
 # Next tasks borrowed from hussainweb/ansible-role-chezmoi
 - name: Find the latest chezmoi version
-  when: chezmoi_version == ""
+  when: zsh_chezmoi_version == ""
   block:
     - name: Find latest releases
       ansible.builtin.uri:
@@ -40,7 +43,7 @@
 - name: Set the chezmoi version
   when: chezmoi_version != ""
   ansible.builtin.set_fact:
-    _chezmoi_version: "{{ chezmoi_version }}"
+    _chezmoi_version: "{{ zsh_chezmoi_version }}"
 
 - name: Check if chezmoi is already installed
   ansible.builtin.command: chezmoi --version
@@ -55,17 +58,13 @@
 
 - name: "Install (deb) chezmoi v{{ chezmoi_version_filtered }}"
   ansible.builtin.apt:
-    deb: >
-      https://github.com/twpayne/chezmoi/releases/download/v{{ chezmoi_version_filtered }}/
-      chezmoi_{{ chezmoi_version_filtered }}_linux_{{ chezmoi_debian_architectures[ansible_architecture] }}.deb
+    deb: https://github.com/twpayne/chezmoi/releases/download/v{{ chezmoi_version_filtered }}/chezmoi_{{ chezmoi_version_filtered }}_linux_{{ zsh_chezmoi_debian_architectures[ansible_architecture] }}.deb
   when: chezmoi_install and ansible_facts['os_family'] == 'Debian'
   become: true
 
 - name: "Install (rpm) chezmoi v{{ chezmoi_version_filtered }}"
   ansible.builtin.dnf:
-    name: >
-      https://github.com/twpayne/chezmoi/releases/download/v{{ chezmoi_version_filtered }}/
-      chezmoi-{{ chezmoi_version_filtered }}-{{ chezmoi_redhat_architectures[ansible_architecture] }}.rpm
+    name: https://github.com/twpayne/chezmoi/releases/download/v{{ chezmoi_version_filtered }}/chezmoi-{{ chezmoi_version_filtered }}-{{ zsh_chezmoi_redhat_architectures[ansible_architecture] }}.rpm
     state: present
     disable_gpg_check: true # GPG check fails for some reason.
   when: chezmoi_install and ansible_facts['os_family'] == 'RedHat'

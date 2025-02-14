@@ -14,17 +14,18 @@
     mode: "0600"
   when: not ssh_github_key_exists.stat.exists
 
-- name: Ensure SSH config directory exists
+- name: Ensure SSH config directory exists for {{ git_user }}
   ansible.builtin.file:
     path: "{{ homedir }}/.ssh"
     state: directory
     mode: "0700"
 
-- name: Add SSH config entry for GitHub
+- name: Add SSH config entry for GitHub for {{ git_user }}
   ansible.builtin.blockinfile:
     path: "{{ homedir }}/.ssh/config"
     state: present
     create: true
+    owner: "{{ git_user }}"
     mode: "0600"
     marker: "# {mark} ANSIBLE MANAGED BLOCK FOR GITHUB"
     block: |
@@ -41,9 +42,9 @@
     key: "{{ lookup('pipe', 'ssh-keyscan github.com') }}"
     state: present
 
-- name: Clone the Homelab repository using SSH
+- name: Clone the Homelab repository using SSH into {{ homedir }}
   ansible.builtin.git:
     repo: "git@github.com:{{ github_user }}/{{ github_repo }}.git"
     dest: "{{ homedir }}/{{ github_repo }}"
-    update: false
-  creates: "{{ homedir }}/{{ github_repo }}/.git"
+    version: main
+    update: true
