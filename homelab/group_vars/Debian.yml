@@ -7,3 +7,5 @@ packages:
   - wget
   - zsh
   - fzf
+  - rsync
+  - net-tools
