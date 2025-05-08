@@ -2,6 +2,8 @@
 
 This project contains a collection of [Ansible playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html) I use or have used in my homelab.
 
+It's always a work in progress, so review the playbooks before applying!
+
 ## Playbooks
 
 ### homelab
@@ -65,11 +67,15 @@ ansible-playbook -i hosts.yml main.yml --tags update
 
 ### k8s-cluster
 
-Creating a Kubernetes cluster using Rocky Linux 8.
+Creates a Kubernetes cluster using Rocky Linux 8.
 
 ### k8s-proxmox
 
-Creating a kubernetes cluster where one or more nodes are LXC containers in Proxmox
+Creates a kubernetes cluster where one or more nodes are LXC containers in Proxmox
+
+### samba-server
+
+!! Not working yet !! Installs and configures samba server on destination host
 
 ## Troubleshooting
 
